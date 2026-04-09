@@ -47,10 +47,41 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
 
     mapRef.current = map;
 
-    fetch("https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson")
-      .then((r) => r.json())
-      .then((geoData) => {
-        L.geoJSON(geoData, {
+    // Fetch world GeoJSON and official India GeoJSON in parallel
+    const WORLD_URL = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
+    const INDIA_URL = "https://raw.githubusercontent.com/AbhinavSwami28/india-official-geojson/main/india-states-full.geojson";
+
+    Promise.all([
+      fetch(WORLD_URL).then((r) => r.json()),
+      fetch(INDIA_URL).then((r) => r.json()).catch(() => null),
+    ])
+      .then(([worldData, indiaData]) => {
+        // Replace India's geometry with the official one
+        if (indiaData) {
+          // Remove existing India feature(s) from world data
+          worldData.features = worldData.features.filter((f: any) => {
+            const name = (f.properties?.ADMIN || f.properties?.name || "").toLowerCase();
+            return name !== "india";
+          });
+
+          // Merge all India state geometries into one MultiPolygon feature
+          const allCoords: any[] = [];
+          for (const feature of indiaData.features) {
+            if (feature.geometry.type === "Polygon") {
+              allCoords.push(feature.geometry.coordinates);
+            } else if (feature.geometry.type === "MultiPolygon") {
+              allCoords.push(...feature.geometry.coordinates);
+            }
+          }
+
+          worldData.features.push({
+            type: "Feature",
+            properties: { ADMIN: "India", name: "India" },
+            geometry: { type: "MultiPolygon", coordinates: allCoords },
+          });
+        }
+
+        L.geoJSON(worldData, {
           style: (feature) => {
             const name = feature?.properties?.ADMIN || feature?.properties?.name || "";
             return {
