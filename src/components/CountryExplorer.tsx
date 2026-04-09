@@ -114,24 +114,50 @@ export default function CountryExplorer({ country, loading, error, onClose, onNe
   );
 }
 
+// Fixed positions around the center card to avoid overlap
+const POSITIONS: { x: number; y: number }[] = [
+  { x: 0, y: -280 },     // top center
+  { x: 250, y: -200 },   // top right
+  { x: 300, y: 0 },      // right
+  { x: 250, y: 200 },    // bottom right
+  { x: 0, y: 280 },      // bottom center
+  { x: -250, y: 200 },   // bottom left
+  { x: -300, y: 0 },     // left
+  { x: -250, y: -200 },  // top left
+];
+
+const POSITIONS_SM: { x: number; y: number }[] = [
+  { x: 0, y: -220 },
+  { x: 190, y: -150 },
+  { x: 220, y: 0 },
+  { x: 190, y: 150 },
+  { x: 0, y: 220 },
+  { x: -190, y: 150 },
+  { x: -220, y: 0 },
+  { x: -190, y: -150 },
+];
+
 function NeighborOrbit({ neighbors, onSelect }: { neighbors: CountryNeighbor[]; onSelect: (name: string) => void }) {
-  const count = Math.min(neighbors.length, 8);
   const displayed = neighbors.slice(0, 8);
-  // Radius depends on viewport
-  const radius = typeof window !== "undefined" && window.innerWidth < 640 ? 170 : 240;
+  const isSmall = typeof window !== "undefined" && window.innerWidth < 640;
+  const positions = isSmall ? POSITIONS_SM : POSITIONS;
+
+  // Distribute neighbors evenly across available slots
+  const slots = displayed.map((_, i) => {
+    const slotIndex = displayed.length === 1 ? 0
+      : Math.round((i / displayed.length) * positions.length) % positions.length;
+    return positions[slotIndex];
+  });
 
   return (
     <>
       {displayed.map((n, i) => {
-        const angle = (2 * Math.PI * i) / count - Math.PI / 2;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
-
+        const pos = slots[i];
         return (
           <motion.button
             key={n.name}
             initial={{ opacity: 0, scale: 0, x: 0, y: 0 }}
-            animate={{ opacity: 1, scale: 1, x, y }}
+            animate={{ opacity: 1, scale: 1, x: pos.x, y: pos.y }}
             transition={{
               type: "spring",
               stiffness: 200,
@@ -160,22 +186,20 @@ function NeighborOrbit({ neighbors, onSelect }: { neighbors: CountryNeighbor[]; 
       {/* Connection lines */}
       <svg
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[-1] pointer-events-none"
-        width={radius * 2 + 100}
-        height={radius * 2 + 100}
-        viewBox={`${-(radius + 50)} ${-(radius + 50)} ${(radius + 50) * 2} ${(radius + 50) * 2}`}
+        width="700"
+        height="700"
+        viewBox="-350 -350 700 700"
       >
         {displayed.map((n, i) => {
-          const angle = (2 * Math.PI * i) / count - Math.PI / 2;
-          const x2 = Math.cos(angle) * radius;
-          const y2 = Math.sin(angle) * radius;
+          const pos = slots[i];
           return (
             <motion.line
               key={n.name}
               x1={0}
               y1={0}
-              x2={x2}
-              y2={y2}
-              stroke="hsl(210, 100%, 50%)"
+              x2={pos.x}
+              y2={pos.y}
+              stroke="hsl(var(--primary))"
               strokeWidth={1}
               strokeOpacity={0.15}
               strokeDasharray="4 4"
