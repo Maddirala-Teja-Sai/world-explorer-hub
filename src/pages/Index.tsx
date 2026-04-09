@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
+import { AnimatePresence } from "framer-motion";
 import { fetchCountry, type CountryData } from "@/lib/countryApi";
 import WorldMap from "@/components/WorldMap";
 import SearchBar from "@/components/SearchBar";
-import CountryInfoPanel from "@/components/CountryInfoPanel";
+import CountryExplorer from "@/components/CountryExplorer";
 
 export default function Index() {
   const [country, setCountry] = useState<CountryData | null>(null);
@@ -28,7 +29,6 @@ export default function Index() {
 
   const handleSearch = useCallback(async (name: string) => {
     loadCountry(name);
-    // Also try to fly to it
     try {
       const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(name)}?fields=latlng`);
       if (res.ok) {
@@ -40,10 +40,9 @@ export default function Index() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-background">
-      {/* Map */}
       <WorldMap onCountryClick={loadCountry} flyTo={flyTo} />
 
-      {/* Search overlay */}
+      {/* Search */}
       <div className="absolute top-4 left-4 z-[1000]">
         <SearchBar onSelect={handleSearch} />
       </div>
@@ -53,18 +52,18 @@ export default function Index() {
         <span className="text-sm font-bold tracking-tight">🌍 World Explorer</span>
       </div>
 
-      {/* Country panel */}
-      {panelOpen && (
-        <div className="absolute top-4 right-4 bottom-4 z-[1000] flex items-start pt-12">
-          <CountryInfoPanel
+      {/* Country explorer overlay */}
+      <AnimatePresence>
+        {panelOpen && (
+          <CountryExplorer
             country={country}
             loading={loading}
             error={error}
             onClose={() => setPanelOpen(false)}
             onNeighborClick={loadCountry}
           />
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
