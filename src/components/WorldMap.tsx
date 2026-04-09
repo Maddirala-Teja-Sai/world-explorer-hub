@@ -41,9 +41,7 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
 
     map.getContainer().style.background = "#F0F4F8";
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
-      pane: "markerPane",
-    }).addTo(map);
+    // No tile layer for labels - we'll add capital markers manually
 
     mapRef.current = map;
 
@@ -84,16 +82,21 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
         L.geoJSON(worldData, {
           style: (feature) => {
             const name = feature?.properties?.ADMIN || feature?.properties?.name || "";
+            const isIndia = name.toLowerCase() === "india";
             return {
-              fillColor: PALETTE[hashCode(name) % PALETTE.length],
-              weight: 1.2,
-              color: "#FFFFFF",
-              fillOpacity: 0.75,
+              fillColor: isIndia ? "transparent" : PALETTE[hashCode(name) % PALETTE.length],
+              weight: isIndia ? 2 : 1.2,
+              color: isIndia ? "#1D4ED8" : "#FFFFFF",
+              fillOpacity: isIndia ? 0 : 0.75,
             };
           },
           onEachFeature: (feature, layer) => {
             const name = feature.properties.ADMIN || feature.properties.name;
-            const baseColor = PALETTE[hashCode(name || "") % PALETTE.length];
+            const isIndia = (name || "").toLowerCase() === "india";
+            const baseColor = isIndia ? "transparent" : PALETTE[hashCode(name || "") % PALETTE.length];
+            const baseWeight = isIndia ? 2 : 1.2;
+            const baseBorderColor = isIndia ? "#1D4ED8" : "#FFFFFF";
+            const baseOpacity = isIndia ? 0 : 0.75;
             const path = layer as L.Path;
 
             layer.on({
@@ -105,7 +108,7 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
               },
               mouseout: () => {
                 if (activeLayerRef.current !== path) {
-                  path.setStyle({ fillColor: baseColor, weight: 1.2, color: "#FFFFFF", fillOpacity: 0.75 });
+                  path.setStyle({ fillColor: baseColor, weight: baseWeight, color: baseBorderColor, fillOpacity: baseOpacity });
                 }
               },
               click: () => {
@@ -113,7 +116,7 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
                   const prev = activeLayerRef.current as any;
                   const prevName = prev.feature?.properties?.ADMIN || prev.feature?.properties?.name || "";
                   const prevColor = PALETTE[hashCode(prevName) % PALETTE.length];
-                  activeLayerRef.current.setStyle({ fillColor: prevColor, weight: 1.2, color: "#FFFFFF", fillOpacity: 0.75 });
+                  activeLayerRef.current.setStyle({ fillColor: prevColor, weight: prevIsIndia ? 2 : 1.2, color: prevIsIndia ? "#1D4ED8" : "#FFFFFF", fillOpacity: prevIsIndia ? 0 : 0.75 });
                 }
                 activeLayerRef.current = path;
                 path.setStyle({ fillColor: ACTIVE_COLOR, weight: 2.5, color: "#1D4ED8", fillOpacity: 0.9 });
