@@ -126,6 +126,27 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
             });
           },
         }).addTo(map);
+
+        // Add capital city labels
+        fetch("https://restcountries.com/v3.1/all?fields=name,capital,capitalInfo")
+          .then((r) => r.json())
+          .then((countries: any[]) => {
+            for (const c of countries) {
+              const latlng = c.capitalInfo?.latlng;
+              const capitalName = c.capital?.[0];
+              if (!latlng || !capitalName) continue;
+              L.marker([latlng[0], latlng[1]], {
+                icon: L.divIcon({
+                  className: "capital-label",
+                  html: `<span style="font-size:10px;font-weight:600;color:#334155;text-shadow:0 0 3px #fff,0 0 3px #fff;white-space:nowrap;pointer-events:none">${capitalName}</span>`,
+                  iconSize: [0, 0],
+                  iconAnchor: [0, 0],
+                }),
+                interactive: false,
+              }).addTo(map);
+            }
+          })
+          .catch(() => {});
       })
       .catch(console.error);
 
