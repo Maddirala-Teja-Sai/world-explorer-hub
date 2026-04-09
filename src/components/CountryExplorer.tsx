@@ -20,7 +20,7 @@ interface Props {
 
 export default function CountryExplorer({ country, loading, error, onClose, onNeighborClick }: Props) {
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-none">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-none overflow-auto">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -125,25 +125,25 @@ export default function CountryExplorer({ country, loading, error, onClose, onNe
 
 // Fixed positions around the center card to avoid overlap
 const POSITIONS: { x: number; y: number }[] = [
-  { x: 0, y: -330 },     // top center
-  { x: 310, y: -240 },   // top right
-  { x: 370, y: 0 },      // right
-  { x: 310, y: 240 },    // bottom right
-  { x: 0, y: 330 },      // bottom center
-  { x: -310, y: 240 },   // bottom left
-  { x: -370, y: 0 },     // left
-  { x: -310, y: -240 },  // top left
+  { x: 0, y: -290 },     // top center
+  { x: 280, y: -180 },   // top right
+  { x: 330, y: 0 },      // right
+  { x: 280, y: 180 },    // bottom right
+  { x: 0, y: 260 },      // bottom center
+  { x: -280, y: 180 },   // bottom left
+  { x: -330, y: 0 },     // left
+  { x: -280, y: -180 },  // top left
 ];
 
 const POSITIONS_SM: { x: number; y: number }[] = [
-  { x: 0, y: -260 },
-  { x: 230, y: -180 },
-  { x: 270, y: 0 },
-  { x: 230, y: 180 },
-  { x: 0, y: 260 },
-  { x: -230, y: 180 },
-  { x: -270, y: 0 },
-  { x: -230, y: -180 },
+  { x: 0, y: -220 },
+  { x: 200, y: -140 },
+  { x: 230, y: 0 },
+  { x: 200, y: 140 },
+  { x: 0, y: 200 },
+  { x: -200, y: 140 },
+  { x: -230, y: 0 },
+  { x: -200, y: -140 },
 ];
 
 function NeighborOrbit({ neighbors, onSelect }: { neighbors: CountryNeighbor[]; onSelect: (name: string) => void }) {

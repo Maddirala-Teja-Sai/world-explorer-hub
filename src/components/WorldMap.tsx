@@ -47,7 +47,7 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
 
     // Fetch world GeoJSON and official India GeoJSON in parallel
     const WORLD_URL = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
-    const INDIA_URL = "https://raw.githubusercontent.com/AbhinavSwami28/india-official-geojson/main/india-states-full.geojson";
+    const INDIA_URL = "https://raw.githubusercontent.com/AbhinavSwami28/india-official-geojson/main/india-states-simplified.geojson";
 
     Promise.all([
       fetch(WORLD_URL).then((r) => r.json()),
@@ -62,13 +62,16 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
             return name !== "india";
           });
 
-          // Merge all India state geometries into one MultiPolygon feature
+          // Merge all India geometries into one MultiPolygon (outer boundary only)
           const allCoords: any[] = [];
           for (const feature of indiaData.features) {
             if (feature.geometry.type === "Polygon") {
-              allCoords.push(feature.geometry.coordinates);
+              // Only take the outer ring (index 0), skip holes to avoid internal borders
+              allCoords.push([feature.geometry.coordinates[0]]);
             } else if (feature.geometry.type === "MultiPolygon") {
-              allCoords.push(...feature.geometry.coordinates);
+              for (const poly of feature.geometry.coordinates) {
+                allCoords.push([poly[0]]);
+              }
             }
           }
 
