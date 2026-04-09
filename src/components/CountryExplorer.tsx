@@ -20,7 +20,7 @@ interface Props {
 
 export default function CountryExplorer({ country, loading, error, onClose, onNeighborClick }: Props) {
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-none">
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center pointer-events-none overflow-auto">
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
