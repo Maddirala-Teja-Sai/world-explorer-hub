@@ -40,66 +40,38 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
     });
 
     map.getContainer().style.background = "#F0F4F8";
-
-    // No tile layer for labels - we'll add capital markers manually
-
     mapRef.current = map;
 
-    // Fetch world GeoJSON and official India GeoJSON in parallel
     const WORLD_URL = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
-    const INDIA_URL = "https://raw.githubusercontent.com/AbhinavSwami28/india-official-geojson/main/india-states-simplified.geojson";
+    const INDIA_URL = "https://raw.githubusercontent.com/datameet/maps/master/Country/india-soi.geojson";
 
     Promise.all([
       fetch(WORLD_URL).then((r) => r.json()),
       fetch(INDIA_URL).then((r) => r.json()).catch(() => null),
     ])
       .then(([worldData, indiaData]) => {
-        // Replace India's geometry with the official one
+        // Remove India from world data (we'll add official version separately)
         if (indiaData) {
-          // Remove existing India feature(s) from world data
           worldData.features = worldData.features.filter((f: any) => {
             const name = (f.properties?.ADMIN || f.properties?.name || "").toLowerCase();
             return name !== "india";
           });
-
-          // Merge all India geometries into one MultiPolygon (outer boundary only)
-          const allCoords: any[] = [];
-          for (const feature of indiaData.features) {
-            if (feature.geometry.type === "Polygon") {
-              // Only take the outer ring (index 0), skip holes to avoid internal borders
-              allCoords.push([feature.geometry.coordinates[0]]);
-            } else if (feature.geometry.type === "MultiPolygon") {
-              for (const poly of feature.geometry.coordinates) {
-                allCoords.push([poly[0]]);
-              }
-            }
-          }
-
-          worldData.features.push({
-            type: "Feature",
-            properties: { ADMIN: "India", name: "India" },
-            geometry: { type: "MultiPolygon", coordinates: allCoords },
-          });
         }
 
+        // Render world countries (without India)
         L.geoJSON(worldData, {
           style: (feature) => {
             const name = feature?.properties?.ADMIN || feature?.properties?.name || "";
-            const isIndia = name.toLowerCase() === "india";
             return {
-              fillColor: isIndia ? "transparent" : PALETTE[hashCode(name) % PALETTE.length],
-              weight: isIndia ? 2 : 1.2,
-              color: isIndia ? "#1D4ED8" : "#FFFFFF",
-              fillOpacity: isIndia ? 0 : 0.75,
+              fillColor: PALETTE[hashCode(name) % PALETTE.length],
+              weight: 1.2,
+              color: "#FFFFFF",
+              fillOpacity: 0.75,
             };
           },
           onEachFeature: (feature, layer) => {
             const name = feature.properties.ADMIN || feature.properties.name;
-            const isIndia = (name || "").toLowerCase() === "india";
-            const baseColor = isIndia ? "transparent" : PALETTE[hashCode(name || "") % PALETTE.length];
-            const baseWeight = isIndia ? 2 : 1.2;
-            const baseBorderColor = isIndia ? "#1D4ED8" : "#FFFFFF";
-            const baseOpacity = isIndia ? 0 : 0.75;
+            const baseColor = PALETTE[hashCode(name || "") % PALETTE.length];
             const path = layer as L.Path;
 
             layer.on({
@@ -111,16 +83,15 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
               },
               mouseout: () => {
                 if (activeLayerRef.current !== path) {
-                  path.setStyle({ fillColor: baseColor, weight: baseWeight, color: baseBorderColor, fillOpacity: baseOpacity });
+                  path.setStyle({ fillColor: baseColor, weight: 1.2, color: "#FFFFFF", fillOpacity: 0.75 });
                 }
               },
               click: () => {
                 if (activeLayerRef.current && activeLayerRef.current !== path) {
                   const prev = activeLayerRef.current as any;
                   const prevName = prev.feature?.properties?.ADMIN || prev.feature?.properties?.name || "";
-                  const prevIsIndia = prevName.toLowerCase() === "india";
-                  const prevColor = prevIsIndia ? "transparent" : PALETTE[hashCode(prevName) % PALETTE.length];
-                  activeLayerRef.current.setStyle({ fillColor: prevColor, weight: prevIsIndia ? 2 : 1.2, color: prevIsIndia ? "#1D4ED8" : "#FFFFFF", fillOpacity: prevIsIndia ? 0 : 0.75 });
+                  const prevColor = PALETTE[hashCode(prevName) % PALETTE.length];
+                  activeLayerRef.current.setStyle({ fillColor: prevColor, weight: 1.2, color: "#FFFFFF", fillOpacity: 0.75 });
                 }
                 activeLayerRef.current = path;
                 path.setStyle({ fillColor: ACTIVE_COLOR, weight: 2.5, color: "#1D4ED8", fillOpacity: 0.9 });
@@ -129,6 +100,45 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
             });
           },
         }).addTo(map);
+
+        // Add official India boundary as outline-only overlay
+        if (indiaData) {
+          const indiaLayer = L.geoJSON(indiaData, {
+            style: () => ({
+              fillColor: "transparent",
+              weight: 2,
+              color: "#1D4ED8",
+              fillOpacity: 0,
+            }),
+            onEachFeature: (_feature, layer) => {
+              const path = layer as L.Path;
+              layer.on({
+                mouseover: () => {
+                  if (activeLayerRef.current !== path) {
+                    path.setStyle({ weight: 3, color: "#3B82F6" });
+                  }
+                },
+                mouseout: () => {
+                  if (activeLayerRef.current !== path) {
+                    path.setStyle({ weight: 2, color: "#1D4ED8" });
+                  }
+                },
+                click: () => {
+                  if (activeLayerRef.current && activeLayerRef.current !== path) {
+                    const prev = activeLayerRef.current as any;
+                    const prevName = prev.feature?.properties?.ADMIN || prev.feature?.properties?.name || "";
+                    const prevColor = PALETTE[hashCode(prevName) % PALETTE.length];
+                    activeLayerRef.current.setStyle({ fillColor: prevColor, weight: 1.2, color: "#FFFFFF", fillOpacity: 0.75 });
+                  }
+                  activeLayerRef.current = path;
+                  path.setStyle({ weight: 3, color: "#1D4ED8" });
+                  onCountryClick("India");
+                },
+              });
+            },
+          });
+          indiaLayer.addTo(map);
+        }
 
         // Add capital city labels
         fetch("https://restcountries.com/v3.1/all?fields=name,capital,capitalInfo")
