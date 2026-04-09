@@ -47,10 +47,6 @@ export default function Index() {
         <SearchBar onSelect={handleSearch} />
       </div>
 
-      {/* Logo */}
-      <div className="absolute top-4 right-4 z-[1000] glass-panel px-4 py-2">
-        <span className="text-sm font-bold tracking-tight">🌍 World Explorer</span>
-      </div>
 
       {/* Country explorer overlay */}
       <AnimatePresence>
