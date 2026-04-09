@@ -86,6 +86,15 @@ export default function CountryExplorer({ country, loading, error, onClose, onNe
                   src={country.flag_url}
                   alt={`Flag of ${country.name}`}
                   className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    if (!img.dataset.retried) {
+                      img.dataset.retried = "1";
+                      img.src = country.flag_url.replace('.svg', '.png');
+                    }
+                  }}
                 />
               </div>
 
@@ -116,25 +125,25 @@ export default function CountryExplorer({ country, loading, error, onClose, onNe
 
 // Fixed positions around the center card to avoid overlap
 const POSITIONS: { x: number; y: number }[] = [
-  { x: 0, y: -280 },     // top center
-  { x: 250, y: -200 },   // top right
-  { x: 300, y: 0 },      // right
-  { x: 250, y: 200 },    // bottom right
-  { x: 0, y: 280 },      // bottom center
-  { x: -250, y: 200 },   // bottom left
-  { x: -300, y: 0 },     // left
-  { x: -250, y: -200 },  // top left
+  { x: 0, y: -330 },     // top center
+  { x: 310, y: -240 },   // top right
+  { x: 370, y: 0 },      // right
+  { x: 310, y: 240 },    // bottom right
+  { x: 0, y: 330 },      // bottom center
+  { x: -310, y: 240 },   // bottom left
+  { x: -370, y: 0 },     // left
+  { x: -310, y: -240 },  // top left
 ];
 
 const POSITIONS_SM: { x: number; y: number }[] = [
-  { x: 0, y: -220 },
-  { x: 190, y: -150 },
-  { x: 220, y: 0 },
-  { x: 190, y: 150 },
-  { x: 0, y: 220 },
-  { x: -190, y: 150 },
-  { x: -220, y: 0 },
-  { x: -190, y: -150 },
+  { x: 0, y: -260 },
+  { x: 230, y: -180 },
+  { x: 270, y: 0 },
+  { x: 230, y: 180 },
+  { x: 0, y: 260 },
+  { x: -230, y: 180 },
+  { x: -270, y: 0 },
+  { x: -230, y: -180 },
 ];
 
 function NeighborOrbit({ neighbors, onSelect }: { neighbors: CountryNeighbor[]; onSelect: (name: string) => void }) {
@@ -175,6 +184,7 @@ function NeighborOrbit({ neighbors, onSelect }: { neighbors: CountryNeighbor[]; 
               src={n.flag_url}
               alt=""
               className="h-6 w-8 rounded-sm object-cover border border-border/30 shrink-0"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             />
             <span className="text-xs font-medium whitespace-nowrap max-w-[90px] truncate group-hover:text-primary transition-colors">
               {n.name}
