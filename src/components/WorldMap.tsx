@@ -115,7 +115,8 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
                 if (activeLayerRef.current && activeLayerRef.current !== path) {
                   const prev = activeLayerRef.current as any;
                   const prevName = prev.feature?.properties?.ADMIN || prev.feature?.properties?.name || "";
-                  const prevColor = PALETTE[hashCode(prevName) % PALETTE.length];
+                  const prevIsIndia = prevName.toLowerCase() === "india";
+                  const prevColor = prevIsIndia ? "transparent" : PALETTE[hashCode(prevName) % PALETTE.length];
                   activeLayerRef.current.setStyle({ fillColor: prevColor, weight: prevIsIndia ? 2 : 1.2, color: prevIsIndia ? "#1D4ED8" : "#FFFFFF", fillOpacity: prevIsIndia ? 0 : 0.75 });
                 }
                 activeLayerRef.current = path;
