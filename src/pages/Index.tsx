@@ -4,6 +4,7 @@ import { fetchCountry, type CountryData } from "@/lib/countryApi";
 import WorldMap from "@/components/WorldMap";
 import SearchBar from "@/components/SearchBar";
 import CountryExplorer from "@/components/CountryExplorer";
+import InfoButton from "@/components/InfoButton";
 
 export default function Index() {
   const [country, setCountry] = useState<CountryData | null>(null);
@@ -47,6 +48,10 @@ export default function Index() {
         <SearchBar onSelect={handleSearch} />
       </div>
 
+      {/* Info button */}
+      <div className="absolute top-4 right-4 z-[1000]">
+        <InfoButton />
+      </div>
 
       {/* Country explorer overlay */}
       <AnimatePresence>
