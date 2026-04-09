@@ -86,6 +86,15 @@ export default function CountryExplorer({ country, loading, error, onClose, onNe
                   src={country.flag_url}
                   alt={`Flag of ${country.name}`}
                   className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    if (!img.dataset.retried) {
+                      img.dataset.retried = "1";
+                      img.src = country.flag_url.replace('.svg', '.png');
+                    }
+                  }}
                 />
               </div>
 
