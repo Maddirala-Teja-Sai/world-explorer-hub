@@ -49,7 +49,7 @@ export default function Index() {
       </div>
 
       {/* Info button */}
-      <div className="absolute top-4 right-4 z-[1000] relative">
+      <div className="absolute top-4 right-4 z-[1000]">
         <InfoButton />
       </div>
 
