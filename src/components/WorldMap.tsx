@@ -131,20 +131,28 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
           },
         }).addTo(map);
 
-        // Add country name labels at polygon centroids
+        // Add country name labels at polygon centroids, split by area
+        const MIN_AREA_FOR_MAJOR = 15; // degrees squared — rough threshold for "large" countries
         geoLayer.eachLayer((layer: any) => {
           const name = layer.feature?.properties?.ADMIN || layer.feature?.properties?.name;
           if (!name) return;
-          const center = (layer as L.Polygon).getBounds().getCenter();
-          L.marker([center.lat, center.lng], {
+          const bounds = (layer as L.Polygon).getBounds();
+          const center = bounds.getCenter();
+          const area = (bounds.getNorth() - bounds.getSouth()) * (bounds.getEast() - bounds.getWest());
+          const isMajor = area > MIN_AREA_FOR_MAJOR;
+
+          const marker = L.marker([center.lat, center.lng], {
             icon: L.divIcon({
               className: "country-label",
-              html: `<span style="font-size:12px;font-weight:700;color:#1e293b;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap;pointer-events:none">${name}</span>`,
+              html: `<span style="font-size:${isMajor ? 13 : 11}px;font-weight:700;color:#1e293b;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap;pointer-events:none">${name}</span>`,
               iconSize: [0, 0],
               iconAnchor: [0, 0],
             }),
             interactive: false,
-          }).addTo(countryLabelLayer);
+          });
+
+          if (isMajor) marker.addTo(majorCountryLabelLayer);
+          marker.addTo(allCountryLabelLayer);
         });
 
         // Add capital city labels
