@@ -16,6 +16,16 @@ function hashCode(s: string): number {
   return Math.abs(h);
 }
 
+const CONTINENTS: { name: string; lat: number; lng: number }[] = [
+  { name: "North America", lat: 45, lng: -100 },
+  { name: "South America", lat: -15, lng: -60 },
+  { name: "Europe", lat: 50, lng: 15 },
+  { name: "Africa", lat: 5, lng: 20 },
+  { name: "Asia", lat: 45, lng: 90 },
+  { name: "Oceania", lat: -25, lng: 135 },
+  { name: "Antarctica", lat: -80, lng: 0 },
+];
+
 interface WorldMapProps {
   onCountryClick: (name: string) => void;
   flyTo?: { lat: number; lng: number } | null;
@@ -42,11 +52,48 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
     map.getContainer().style.background = "#F0F4F8";
     mapRef.current = map;
 
+    // Layer groups for zoom-based visibility
+    const continentLayer = L.layerGroup().addTo(map);
+    const countryLabelLayer = L.layerGroup();
+    const capitalLayer = L.layerGroup();
+
+    // Add continent labels
+    for (const c of CONTINENTS) {
+      L.marker([c.lat, c.lng], {
+        icon: L.divIcon({
+          className: "continent-label",
+          html: `<span style="font-size:16px;font-weight:800;color:#475569;text-shadow:0 0 6px #fff,0 0 6px #fff,0 0 3px #fff;white-space:nowrap;pointer-events:none;letter-spacing:2px;text-transform:uppercase">${c.name}</span>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
+        }),
+        interactive: false,
+      }).addTo(continentLayer);
+    }
+
+    // Zoom handler to toggle label layers
+    function updateLabelVisibility() {
+      const zoom = map.getZoom();
+      if (zoom < 3.5) {
+        if (!map.hasLayer(continentLayer)) continentLayer.addTo(map);
+        if (map.hasLayer(countryLabelLayer)) map.removeLayer(countryLabelLayer);
+        if (map.hasLayer(capitalLayer)) map.removeLayer(capitalLayer);
+      } else if (zoom < 5) {
+        if (map.hasLayer(continentLayer)) map.removeLayer(continentLayer);
+        if (!map.hasLayer(countryLabelLayer)) countryLabelLayer.addTo(map);
+        if (map.hasLayer(capitalLayer)) map.removeLayer(capitalLayer);
+      } else {
+        if (map.hasLayer(continentLayer)) map.removeLayer(continentLayer);
+        if (!map.hasLayer(countryLabelLayer)) countryLabelLayer.addTo(map);
+        if (!map.hasLayer(capitalLayer)) capitalLayer.addTo(map);
+      }
+    }
+    map.on("zoomend", updateLabelVisibility);
+
     const WORLD_URL = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
 
     fetch(WORLD_URL).then((r) => r.json())
       .then((worldData) => {
-        L.geoJSON(worldData, {
+        const geoLayer = L.geoJSON(worldData, {
           style: (feature) => {
             const name = feature?.properties?.ADMIN || feature?.properties?.name || "";
             return {
@@ -88,6 +135,22 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
           },
         }).addTo(map);
 
+        // Add country name labels at polygon centroids
+        geoLayer.eachLayer((layer: any) => {
+          const name = layer.feature?.properties?.ADMIN || layer.feature?.properties?.name;
+          if (!name) return;
+          const center = (layer as L.Polygon).getBounds().getCenter();
+          L.marker([center.lat, center.lng], {
+            icon: L.divIcon({
+              className: "country-label",
+              html: `<span style="font-size:12px;font-weight:700;color:#1e293b;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap;pointer-events:none">${name}</span>`,
+              iconSize: [0, 0],
+              iconAnchor: [0, 0],
+            }),
+            interactive: false,
+          }).addTo(countryLabelLayer);
+        });
+
         // Add capital city labels
         fetch("https://restcountries.com/v3.1/all?fields=name,capital,capitalInfo")
           .then((r) => r.json())
@@ -99,13 +162,14 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
               L.marker([latlng[0], latlng[1]], {
                 icon: L.divIcon({
                   className: "capital-label",
-                  html: `<span style="font-size:11px;font-weight:700;color:#1e293b;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap;pointer-events:none">★ ${capitalName}</span>`,
+                  html: `<span style="font-size:10px;font-weight:600;color:#64748b;text-shadow:0 0 3px #fff,0 0 3px #fff;white-space:nowrap;pointer-events:none">★ ${capitalName}</span>`,
                   iconSize: [0, 0],
                   iconAnchor: [0, 0],
                 }),
                 interactive: false,
-              }).addTo(map);
+              }).addTo(capitalLayer);
             }
+            updateLabelVisibility();
           })
           .catch(() => {});
       })
