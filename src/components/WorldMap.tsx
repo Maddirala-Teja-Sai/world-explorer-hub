@@ -54,7 +54,8 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
 
     // Layer groups for zoom-based visibility
     const continentLayer = L.layerGroup().addTo(map);
-    const countryLabelLayer = L.layerGroup();
+    const majorCountryLabelLayer = L.layerGroup();
+    const allCountryLabelLayer = L.layerGroup();
     const capitalLayer = L.layerGroup();
 
     // Add continent labels
@@ -73,19 +74,14 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
     // Zoom handler to toggle label layers
     function updateLabelVisibility() {
       const zoom = map.getZoom();
-      if (zoom < 3.5) {
-        if (!map.hasLayer(continentLayer)) continentLayer.addTo(map);
-        if (map.hasLayer(countryLabelLayer)) map.removeLayer(countryLabelLayer);
-        if (map.hasLayer(capitalLayer)) map.removeLayer(capitalLayer);
-      } else if (zoom < 5) {
-        if (map.hasLayer(continentLayer)) map.removeLayer(continentLayer);
-        if (!map.hasLayer(countryLabelLayer)) countryLabelLayer.addTo(map);
-        if (map.hasLayer(capitalLayer)) map.removeLayer(capitalLayer);
-      } else {
-        if (map.hasLayer(continentLayer)) map.removeLayer(continentLayer);
-        if (!map.hasLayer(countryLabelLayer)) countryLabelLayer.addTo(map);
-        if (!map.hasLayer(capitalLayer)) capitalLayer.addTo(map);
-      }
+      // zoom < 3.5: continents only
+      // 3.5-4.5: major country names only
+      // 4.5-5.5: all country names
+      // 5.5+: all country names + capitals
+      continentLayer[zoom < 3.5 ? "addTo" : "removeFrom"](map);
+      majorCountryLabelLayer[zoom >= 3.5 && zoom < 4.5 ? "addTo" : "removeFrom"](map);
+      allCountryLabelLayer[zoom >= 4.5 ? "addTo" : "removeFrom"](map);
+      capitalLayer[zoom >= 5.5 ? "addTo" : "removeFrom"](map);
     }
     map.on("zoomend", updateLabelVisibility);
 
@@ -135,20 +131,28 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
           },
         }).addTo(map);
 
-        // Add country name labels at polygon centroids
+        // Add country name labels at polygon centroids, split by area
+        const MIN_AREA_FOR_MAJOR = 15; // degrees squared — rough threshold for "large" countries
         geoLayer.eachLayer((layer: any) => {
           const name = layer.feature?.properties?.ADMIN || layer.feature?.properties?.name;
           if (!name) return;
-          const center = (layer as L.Polygon).getBounds().getCenter();
-          L.marker([center.lat, center.lng], {
+          const bounds = (layer as L.Polygon).getBounds();
+          const center = bounds.getCenter();
+          const area = (bounds.getNorth() - bounds.getSouth()) * (bounds.getEast() - bounds.getWest());
+          const isMajor = area > MIN_AREA_FOR_MAJOR;
+
+          const marker = L.marker([center.lat, center.lng], {
             icon: L.divIcon({
               className: "country-label",
-              html: `<span style="font-size:12px;font-weight:700;color:#1e293b;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap;pointer-events:none">${name}</span>`,
+              html: `<span style="font-size:${isMajor ? 13 : 11}px;font-weight:700;color:#1e293b;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap;pointer-events:none">${name}</span>`,
               iconSize: [0, 0],
               iconAnchor: [0, 0],
             }),
             interactive: false,
-          }).addTo(countryLabelLayer);
+          });
+
+          if (isMajor) marker.addTo(majorCountryLabelLayer);
+          marker.addTo(allCountryLabelLayer);
         });
 
         // Add capital city labels
