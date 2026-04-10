@@ -89,8 +89,6 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
         }).addTo(map);
 
         // Add capital city labels
-
-        // Add capital city labels
         fetch("https://restcountries.com/v3.1/all?fields=name,capital,capitalInfo")
           .then((r) => r.json())
           .then((countries: any[]) => {
@@ -101,7 +99,7 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
               L.marker([latlng[0], latlng[1]], {
                 icon: L.divIcon({
                   className: "capital-label",
-                  html: `<span style="font-size:10px;font-weight:600;color:#334155;text-shadow:0 0 3px #fff,0 0 3px #fff;white-space:nowrap;pointer-events:none">${capitalName}</span>`,
+                  html: `<span style="font-size:11px;font-weight:700;color:#1e293b;text-shadow:0 0 4px #fff,0 0 4px #fff,0 0 2px #fff;white-space:nowrap;pointer-events:none">★ ${capitalName}</span>`,
                   iconSize: [0, 0],
                   iconAnchor: [0, 0],
                 }),
