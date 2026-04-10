@@ -2,9 +2,11 @@ import { useEffect, useRef } from "react";
 import L from "leaflet";
 
 const PALETTE = [
-  "#93C5FD", "#86EFAC", "#FCA5A5", "#FCD34D", "#C4B5FD",
-  "#67E8F9", "#FDBA74", "#F9A8D4", "#A5B4FC", "#BEF264",
-  "#FDE68A", "#5EEAD4",
+  "#86EFAC", "#FCA5A5", "#FCD34D", "#C4B5FD",
+  "#FDBA74", "#F9A8D4", "#BEF264", "#FDE68A",
+  "#5EEAD4", "#FDA4AF", "#D9F99D", "#FBBF24",
+  "#A7F3D0", "#E9D5FF", "#FED7AA", "#99F6E4",
+  "#FECACA", "#D4FC79", "#F0ABFC", "#FEF08A",
 ];
 
 const HOVER_COLOR = "#60A5FA";
