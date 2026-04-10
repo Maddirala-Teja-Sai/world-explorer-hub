@@ -54,7 +54,8 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
 
     // Layer groups for zoom-based visibility
     const continentLayer = L.layerGroup().addTo(map);
-    const countryLabelLayer = L.layerGroup();
+    const majorCountryLabelLayer = L.layerGroup();
+    const allCountryLabelLayer = L.layerGroup();
     const capitalLayer = L.layerGroup();
 
     // Add continent labels
@@ -73,19 +74,14 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
     // Zoom handler to toggle label layers
     function updateLabelVisibility() {
       const zoom = map.getZoom();
-      if (zoom < 3.5) {
-        if (!map.hasLayer(continentLayer)) continentLayer.addTo(map);
-        if (map.hasLayer(countryLabelLayer)) map.removeLayer(countryLabelLayer);
-        if (map.hasLayer(capitalLayer)) map.removeLayer(capitalLayer);
-      } else if (zoom < 5) {
-        if (map.hasLayer(continentLayer)) map.removeLayer(continentLayer);
-        if (!map.hasLayer(countryLabelLayer)) countryLabelLayer.addTo(map);
-        if (map.hasLayer(capitalLayer)) map.removeLayer(capitalLayer);
-      } else {
-        if (map.hasLayer(continentLayer)) map.removeLayer(continentLayer);
-        if (!map.hasLayer(countryLabelLayer)) countryLabelLayer.addTo(map);
-        if (!map.hasLayer(capitalLayer)) capitalLayer.addTo(map);
-      }
+      // zoom < 3.5: continents only
+      // 3.5-4.5: major country names only
+      // 4.5-5.5: all country names
+      // 5.5+: all country names + capitals
+      continentLayer[zoom < 3.5 ? "addTo" : "removeFrom"](map);
+      majorCountryLabelLayer[zoom >= 3.5 && zoom < 4.5 ? "addTo" : "removeFrom"](map);
+      allCountryLabelLayer[zoom >= 4.5 ? "addTo" : "removeFrom"](map);
+      capitalLayer[zoom >= 5.5 ? "addTo" : "removeFrom"](map);
     }
     map.on("zoomend", updateLabelVisibility);
 
