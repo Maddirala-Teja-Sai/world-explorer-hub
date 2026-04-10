@@ -43,22 +43,9 @@ export default function WorldMap({ onCountryClick, flyTo }: WorldMapProps) {
     mapRef.current = map;
 
     const WORLD_URL = "https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson";
-    const INDIA_URL = "https://raw.githubusercontent.com/datameet/maps/master/Country/india-soi.geojson";
 
-    Promise.all([
-      fetch(WORLD_URL).then((r) => r.json()),
-      fetch(INDIA_URL).then((r) => r.json()).catch(() => null),
-    ])
-      .then(([worldData, indiaData]) => {
-        // Remove India from world data (we'll add official version separately)
-        if (indiaData) {
-          worldData.features = worldData.features.filter((f: any) => {
-            const name = (f.properties?.ADMIN || f.properties?.name || "").toLowerCase();
-            return name !== "india";
-          });
-        }
-
-        // Render world countries (without India)
+    fetch(WORLD_URL).then((r) => r.json())
+      .then((worldData) => {
         L.geoJSON(worldData, {
           style: (feature) => {
             const name = feature?.properties?.ADMIN || feature?.properties?.name || "";
